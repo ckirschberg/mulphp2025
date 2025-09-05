@@ -14,6 +14,7 @@ $password = getenv('PASSWORD');
 
 $request = $_SERVER['REQUEST_METHOD'];
 
+
 // Create an if statement to check if this is a GET request
 
 $conn = new PDO("mysql:host=$servername;dbname=mul2025", $username, $password);
@@ -43,21 +44,28 @@ else if ($request === 'POST' && $uri === '/pips') {
     $name = $input["name"];
     $color = $input["color"];
 
-    if ($name !== '') { // validering: overholde regler for at gemme korrekt data
-        $data = [
-            'name' => $name,
-            'color' => $color
-        ];
-        $sql = "INSERT INTO cats VALUES (default, :name, :color)";
-        $stmt= $conn->prepare($sql);
-        $stmt->execute($data);
+    $length = strlen($color);
+
+    if ($name !== '' ) { // validering: overholde regler for at gemme korrekt data
+        if ($length <= 10) {
+            $data = [
+                'name' => $name,
+                'color' => $color
+            ];
+            $sql = "INSERT INTO cats VALUES (default, :name, :color)";
+            $stmt= $conn->prepare($sql);
+            $stmt->execute($data);
 
 
-        $id = $conn->lastInsertId();
-        $cat = (object) $input;
-        $cat->id = $id;
+            $id = $conn->lastInsertId();
+            $cat = (object) $input;
+            $cat->id = $id;
 
-        echo json_encode($cat);
+            echo json_encode($cat);
+        }
+        else {
+            echo json_encode("Color må højst være 10 karakterer");
+        }
     } else {
         echo json_encode("Navn skal udfyldes");
     }
