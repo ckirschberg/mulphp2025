@@ -30,12 +30,39 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 if ($request === 'GET' && $uri === '/pips') {
     try {
-        $statement = $conn->query("SELECT * FROM cats");
-        $result = $statement->fetchAll();
+        // Læs query-parametre: limit og offset
+        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
+        $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;
 
-        echo json_encode($result);
+        // Rimelige grænser/validering
+        if ($limit < 1) $limit = 1;
+        if ($limit > 100) $limit = 100; // undgå alt for store svar
+        if ($offset < 0) $offset = 0;
+
+        // (Valgfrit) total antal rækker til metadata
+        $total = (int) $conn->query("SELECT COUNT(*) FROM cats")->fetchColumn();
+
+        // Hent pagineret data – bind som ints!
+        $stmt = $conn->prepare("SELECT * FROM cats ORDER BY catsid ASC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Returnér data + pagination-info
+        echo json_encode([
+            'data' => $rows,
+            'pagination' => [
+                'limit' => $limit,
+                'offset' => $offset,
+                'total' => $total,
+                'next_offset' => ($offset + $limit < $total) ? $offset + $limit : null,
+                'prev_offset' => ($offset - $limit >= 0) ? $offset - $limit : null
+            ]
+        ]);
     } catch(PDOException $e) {
-    echo "Connection failed: " . $e->getMessage();
+        http_response_code(500);
+        echo json_encode(["error" => "Connection failed: " . $e->getMessage()]);
     }
 } 
 else if ($request === 'POST' && $uri === '/pips') {
