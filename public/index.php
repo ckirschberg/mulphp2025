@@ -29,6 +29,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 
 if ($request === 'GET' && $uri === '/pips') {
+    // herfra
     try {
         // Læs query-parametre: limit og offset
         $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
@@ -64,6 +65,7 @@ if ($request === 'GET' && $uri === '/pips') {
         http_response_code(500);
         echo json_encode(["error" => "Connection failed: " . $e->getMessage()]);
     }
+    // hertil
 } 
 else if ($request === 'POST' && $uri === '/pips') {
     $input = (array) json_decode(file_get_contents('php://input'), true);
